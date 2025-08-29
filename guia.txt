@@ -1,0 +1,224 @@
+
+
+### \#\# Proyecto de Portafolio: Clasificador de Moda con TensorFlow
+
+Aquí tienes el proceso completo, explicado paso a paso.
+
+#### **Paso 1: Definición del Problema y Preparación del Entorno**
+
+Primero, definimos el problema: es una **clasificación multiclase**, ya que tenemos 10 posibles categorías de ropa. Luego, importamos las librerías necesarias.
+
+```python
+# Importar TensorFlow y Keras
+import tensorflow as tf
+from tensorflow import keras
+
+# Librerías de ayuda
+import numpy as np
+import matplotlib.pyplot as plt
+
+print(tf.__version__)
+```
+
+**Explicación:**
+
+  * Importamos `tensorflow` y `keras` para construir la red.
+  * `numpy` nos ayudará a manejar los datos numéricos.
+  * `matplotlib` es esencial para visualizar las imágenes y los resultados.
+
+-----
+
+#### **Paso 2: Carga y Exploración de los Datos**
+
+Cargamos el dataset Fashion MNIST, que ya viene incluido en Keras. Es la forma más sencilla de empezar sin preocuparse por la recolección de datos.
+
+```python
+# Cargar el dataset Fashion MNIST
+fashion_mnist = keras.datasets.fashion_mnist
+(train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
+
+# Definir los nombres de las clases (para visualización)
+class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+
+# Explorar la forma de los datos
+print("Forma de las imágenes de entrenamiento:", train_images.shape)
+print("Forma de las etiquetas de entrenamiento:", train_labels.shape)
+```
+
+**Explicación:**
+
+  * `load_data()` nos devuelve dos tuplas: una para entrenamiento (`train_images`, `train_labels`) y otra para pruebas (`test_images`, `test_labels`).
+  * Vemos que tenemos 60,000 imágenes de 28x28 píxeles para entrenar.
+  * `class_names` es una lista que nos ayudará a interpretar las etiquetas numéricas (del 0 al 9).
+
+-----
+
+#### **Paso 3: Preprocesamiento de los Datos**
+
+Las redes neuronales trabajan mejor con números pequeños. Las imágenes tienen valores de píxeles de 0 a 255. Los **normalizaremos** para que estén en el rango de 0 a 1.
+
+```python
+# Normalizar los valores de los píxeles al rango [0, 1]
+train_images = train_images / 255.0
+test_images = test_images / 255.0
+
+# Verifiquemos algunas imágenes para asegurarnos de que todo está correcto
+plt.figure(figsize=(10,10))
+for i in range(25):
+    plt.subplot(5,5,i+1)
+    plt.xticks([])
+    plt.yticks([])
+    plt.grid(False)
+    plt.imshow(train_images[i], cmap=plt.cm.binary)
+    plt.xlabel(class_names[train_labels[i]])
+plt.show()
+```
+
+**Explicación:**
+
+  * Dividir por 255.0 es la forma más simple y efectiva de escalar los datos de la imagen.
+  * La visualización nos confirma que los datos se han cargado correctamente y que las etiquetas corresponden a las imágenes.
+
+-----
+
+#### **Paso 4: Construcción del Modelo (Arquitectura de la Red)**
+
+Aquí es donde diseñamos nuestra red neuronal. Usaremos una arquitectura simple pero efectiva con capas `Dense`.
+
+```python
+model = keras.Sequential([
+    # 1. Capa de Aplanamiento: Convierte la imagen 28x28 en un vector de 784
+    keras.layers.Flatten(input_shape=(28, 28)),
+    
+    # 2. Primera Capa Oculta: 128 neuronas con activación ReLU
+    keras.layers.Dense(128, activation='relu'),
+    
+    # (Opcional pero recomendado) Capa de Dropout para regularización
+    keras.layers.Dropout(0.3),
+    
+    # 3. Capa de Salida: 10 neuronas (una por clase) con activación Softmax
+    keras.layers.Dense(10, activation='softmax')
+])
+
+# Mostramos un resumen de la arquitectura
+model.summary()
+```
+
+**Explicación:**
+
+  * `Flatten`: Prepara los datos de la imagen para la primera capa densa.
+  * `Dense(128, activation='relu')`: Nuestra capa oculta principal. Aprenderá los patrones complejos de las imágenes.
+  * `Dropout(0.3)`: Una técnica de regularización para prevenir el overfitting, "apagando" aleatoriamente el 30% de las neuronas en cada paso de entrenamiento.
+  * `Dense(10, activation='softmax')`: La capa de salida. `softmax` convierte las salidas en una distribución de probabilidad, indicando la probabilidad de que la imagen pertenezca a cada una de las 10 clases.
+
+-----
+
+#### **Paso 5: Compilación del Modelo**
+
+Antes de entrenar, debemos configurar el proceso de aprendizaje. Esto implica elegir un optimizador, una función de pérdida y las métricas que queremos monitorizar.
+
+```python
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+```
+
+**Explicación:**
+
+  * **`optimizer='adam'`**: Adam es un optimizador robusto y eficiente. Es la opción por defecto para la mayoría de los problemas.
+  * **`loss='sparse_categorical_crossentropy'`**: Es la función de pérdida perfecta para problemas de clasificación multiclase cuando las etiquetas son números enteros (como aquí, 0-9).
+  * **`metrics=['accuracy']`**: Le pedimos al modelo que nos informe sobre la precisión (el porcentaje de imágenes clasificadas correctamente) durante el entrenamiento.
+
+-----
+
+#### **Paso 6: Entrenamiento del Modelo**
+
+¡Es hora de alimentar a la red con los datos\! El método `fit` inicia el ciclo de entrenamiento.
+
+```python
+# Entrenamos el modelo
+history = model.fit(train_images, train_labels, 
+                    epochs=20, 
+                    validation_split=0.2)
+```
+
+**Explicación:**
+
+  * `epochs=20`: El modelo verá el conjunto de datos completo 20 veces.
+  * `validation_split=0.2`: Reservamos el 20% de los datos de entrenamiento para usarlos como un conjunto de validación. Esto nos permite monitorizar si el modelo está sobreajustando (`overfitting`) en datos que no está usando directamente para aprender.
+
+-----
+
+#### **Paso 7: Evaluación del Rendimiento**
+
+Una vez entrenado, evaluamos el rendimiento final del modelo con el conjunto de prueba, datos que nunca antes ha visto.
+
+```python
+# Evaluar el modelo con los datos de prueba
+test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2)
+print(f'\nPrecisión en el conjunto de prueba: {test_acc:.4f}')
+
+# Graficar la precisión y la pérdida durante el entrenamiento
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 2, 1)
+plt.plot(history.history['accuracy'], label='Precisión de Entrenamiento')
+plt.plot(history.history['val_accuracy'], label='Precisión de Validación')
+plt.legend()
+plt.title('Precisión a lo largo de las Épocas')
+plt.subplot(1, 2, 2)
+plt.plot(history.history['loss'], label='Pérdida de Entrenamiento')
+plt.plot(history.history['val_loss'], label='Pérdida de Validación')
+plt.legend()
+plt.title('Pérdida a lo largo de las Épocas')
+plt.show()
+```
+
+**Explicación:**
+
+  * `model.evaluate()` nos da la pérdida y precisión finales en el conjunto de prueba. Esto nos indica qué tan bien generaliza nuestro modelo.
+  * Las gráficas son cruciales para entender el proceso de entrenamiento. Idealmente, las curvas de entrenamiento y validación deberían seguirse de cerca.
+
+-----
+
+#### **Paso 8: Hacer Predicciones y Guardar el Modelo**
+
+Finalmente, usamos nuestro modelo entrenado para hacer predicciones sobre nuevas imágenes y lo guardamos para poder usarlo en el futuro sin tener que reentrenarlo.
+
+```python
+# Hacer predicciones sobre el conjunto de prueba
+predictions = model.predict(test_images)
+
+# Función para visualizar una predicción
+def plot_image_prediction(i, predictions_array, true_label, img):
+    true_label, img = true_label[i], img[i]
+    plt.grid(False)
+    plt.xticks([])
+    plt.yticks([])
+    plt.imshow(img, cmap=plt.cm.binary)
+    
+    predicted_label = np.argmax(predictions_array)
+    if predicted_label == true_label:
+        color = 'blue'
+    else:
+        color = 'red'
+    
+    plt.xlabel(f"{class_names[predicted_label]} {100*np.max(predictions_array):2.0f}% ({class_names[true_label]})", color=color)
+
+# Visualizar la predicción de la imagen en el índice 5
+i = 5
+plt.figure(figsize=(6,3))
+plot_image_prediction(i, predictions[i], test_labels, test_images)
+plt.show()
+
+# Guardar el modelo completo para uso futuro
+model.save('fashion_classifier_model.h5')
+print("\nModelo guardado como 'fashion_classifier_model.h5'")
+```
+
+**Explicación:**
+
+  * `model.predict()` devuelve un array de 10 probabilidades (la salida de la capa softmax) para cada imagen.
+  * `np.argmax()` nos da el índice de la neurona con la probabilidad más alta, que es nuestra predicción final.
+  * La visualización nos ayuda a verificar cualitativamente el rendimiento del modelo. El color azul indica una predicción correcta y el rojo una incorrecta.
+  * `model.save()` empaqueta la arquitectura, los pesos y la configuración del optimizador en un solo archivo, listo para ser desplegado.
