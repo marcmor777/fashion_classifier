@@ -111,5 +111,5 @@ if __name__ == "__main__":
     # Guardar el modelo entrenado
     if not os.path.exists('models'):
         os.makedirs('models')
-    model.save('models/fashion_classifier_model.pickle')
-    print("\nModel saved to 'models/fashion_classifier_model.pickle'")
+    model.save('models/fashion_classifier_model.keras')
+    print("\nModel saved to 'models/fashion_classifier_model.keras'")
